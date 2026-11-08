@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Options research desk</title>
+  <style>
+    :root {
+      --bg: #101418;
+      --panel: #1b242c;
+      --text: #e8eef4;
+      --muted: #b7c2cc;
+      --line: #33414c;
+      --accent: #2f9e8f;
+      --accent-ink: #06211d;
+      --danger: #e07a7a;
+      --gain: #8fd0a8;
+      --space: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.5 "Segoe UI", sans-serif;
+    }
+    header, main { width: min(1100px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 28px 0 8px; }
+    h1 { font-size: 1.8rem; font-weight: 650; margin: 0 0 4px; }
+    h2 { font-size: 1.15rem; margin: 0 0 12px; }
+    p { color: var(--muted); }
+    a { color: #9adfd3; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space); }
+    .cards { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space); margin: 20px 0; }
+    section, .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 10px; }
+    input, select, button {
+      width: 100%;
+      margin-top: 4px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #12191f;
+      color: var(--text);
+      font: inherit;
+    }
+    button {
+      background: var(--accent);
+      color: var(--accent-ink);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px; }
+    .wide { grid-column: 1 / -1; }
+    .status-ok { color: var(--gain); }
+    .status-bad { color: var(--danger); }
+    svg { width: 100%; height: 180px; background: #12191f; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+    .actions { display: flex; gap: 12px; align-items: end; }
+    @media (max-width: 800px) {
+      .grid, .cards, .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Options research desk</h1>
+    <p>Paper backtests for NIFTY and BANKNIFTY. No orders are sent to the exchange.</p>
+  </header>
+  <main>
+    <div class="grid" id="status-cards"></div>
+    <div class="cards">
+      <section>
+        <h2>Strategy</h2>
+        <p>The only built-in entry is <strong>scheduled_time</strong>. Target, stop, size, and charges have to be entered. They are not assumed.</p>
+        <form id="strategy-form" class="form-grid">
+          <label>Index<select name="symbol"><option>NIFTY</option><option>BANKNIFTY</option></select></label>
+          <label>From<input name="from_date" type="date" value="2026-10-01" required></label>
+          <label>To<input name="to_date" type="date" value="2026-10-31" required></label>
+          <label>Entry<input name="entry_time" type="time" value="09:20" required></label>
+          <label>Exit<input name="exit_time" type="time" value="15:15" required></label>
+          <label>Option<select name="option_type"><option>CE</option><option>PE</option></select></label>
+          <label>Expiry<select name="expiry_rule"><option value="weekly">Nearest expiry</option><option value="monthly">Monthly expiry</option><option value="specific">Specific date</option></select></label>
+          <label>Specific expiry<input name="expiry_date" type="date"></label>
+          <label>Strike offset steps<input name="strike_offset_steps" type="number" value="0" required></label>
+          <label>Target %<input name="target_percent" type="number" min="0.1" step="0.1" required></label>
+          <label>Stop loss %<input name="stop_loss_percent" type="number" min="0.1" max="99" step="0.1" required></label>
+          <label>Lots<input name="quantity_lots" type="number" min="1" value="1" required></label>
+          <label>Max trades / day<input name="max_trades_per_day" type="number" min="1" value="1" required></label>
+          <label>Max daily loss<input name="max_daily_loss" type="number" min="1" step="1" required></label>
+          <label>Max open positions<input name="max_open_positions" type="number" min="1" value="1" required></label>
+          <label>Starting capital<input name="starting_capital" type="number" min="1" value="100000" required></label>
+          <label>Brokerage / order<input name="brokerage_per_order" type="number" min="0" step="0.01" required></label>
+          <label>STT sell %<input name="stt_sell_percent" type="number" min="0" step="0.0001" required></label>
+          <label>Exchange txn %<input name="exchange_txn_percent" type="number" min="0" step="0.0001" required></label>
+          <label>SEBI per crore<input name="sebi_per_crore" type="number" min="0" step="0.01" required></label>
+          <label>Stamp buy %<input name="stamp_buy_percent" type="number" min="0" step="0.0001" required></label>
+          <label>GST %<input name="gst_percent" type="number" min="0" step="0.01" required></label>
+          <label>Slippage %<input name="slippage_percent" type="number" min="0" step="0.01" value="0" required></label>
+          <div class="actions wide">
+            <button type="submit" id="run-button">Run paper backtest</button>
+          </div>
+        </form>
+        <p id="form-message" role="status"></p>
+      </section>
+      <section>
+        <h2>Result</h2>
+        <div id="summary">No backtest yet.</div>
+        <h2>Equity</h2>
+        <svg id="equity" viewBox="0 0 300 160" role="img" aria-label="Equity curve"></svg>
+        <h2>Drawdown</h2>
+        <svg id="drawdown" viewBox="0 0 300 160" role="img" aria-label="Drawdown"></svg>
+        <p id="downloads"></p>
+      </section>
+    </div>
+    <section>
+      <h2>Trades</h2>
+      <div id="trades">Run a backtest to see entries and exits.</div>
+    </section>
+  </main>
+  <script>
+    const cards = document.getElementById("status-cards");
+    const message = document.getElementById("form-message");
+
+    function card(title, value, ok) {
+      return `<article class="card"><div>${title}</div><strong class="${ok ? "status-ok" : "status-bad"}">${value}</strong></article>`;
+    }
+
+    async function loadStatus() {
+      const auth = await fetch("/auth/status").then((r) => r.json());
+      const data = await fetch("/api/data/status").then((r) => r.json());
+      const connected = auth.authenticated ? "Connected" : (auth.expired ? "Expired" : "Not connected");
+      cards.innerHTML = [
+        card("Upstox", connected, auth.authenticated),
+        card("User", auth.user_id || "—", Boolean(auth.user_id)),
+        card("Index files", String(data.index_files.length), data.index_files.length > 0),
+        card("Option files", String(data.option_files.length), data.option_files.length > 0),
+      ].join("");
+      if (!auth.authenticated) {
+        message.innerHTML = 'Login is required before a run. <a href="/auth/login">Connect Upstox</a>. Token expires at the next 3:30 AM.';
+      }
+    }
+
+    function numberValue(form, name) {
+      const value = form.get(name);
+      return value === "" ? null : Number(value);
+    }
+
+    function lineChart(svg, points, key, color) {
+      if (!points.length) {
+        svg.innerHTML = "";
+        return;
+      }
+      const values = points.map((point) => point[key]);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const span = max - min || 1;
+      const coords = values.map((value, index) => {
+        const x = points.length === 1 ? 150 : (index / (points.length - 1)) * 280 + 10;
+        const y = 150 - ((value - min) / span) * 130;
+        return `${x},${y}`;
+      }).join(" ");
+      svg.innerHTML = `<polyline fill="none" stroke="${color}" stroke-width="2" points="${coords}"></polyline>`;
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"]/g, (ch) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[ch]));
+    }
+
+    function showReport(report, id) {
+      const summary = document.getElementById("summary");
+      summary.innerHTML = `
+        <p>Trades ${report.trade_count}. Win rate ${report.win_rate_percent}%. Net ${report.net_profit}. Charges ${report.total_charges}.</p>
+        <p>Profit factor ${report.profit_factor ?? "n/a"}. Max drawdown ${report.max_drawdown_percent}% . Data problems ${report.data_quality.problem_count}.</p>`;
+      lineChart(document.getElementById("equity"), report.equity_curve, "equity", "#8fd0a8");
+      lineChart(document.getElementById("drawdown"), report.equity_curve, "drawdown", "#e07a7a");
+      const rows = report.trades.map((trade) => `<tr>
+        <td>${esc(trade.date)}</td><td>${esc(trade.symbol)} ${esc(trade.option_type)}</td><td>${esc(trade.strike)}</td>
+        <td>${esc(trade.entry_price)}</td><td>${esc(trade.exit_price)}</td><td>${esc(trade.exit_reason)}</td><td>${esc(trade.net_pnl)}</td>
+      </tr>`).join("");
+      document.getElementById("trades").innerHTML = `<table>
+        <thead><tr><th>Date</th><th>Contract</th><th>Strike</th><th>Entry</th><th>Exit</th><th>Reason</th><th>Net</th></tr></thead>
+        <tbody>${rows || "<tr><td colspan='7'>No completed trades. Check skipped sessions in the report.</td></tr>"}</tbody>
+      </table>`;
+      document.getElementById("downloads").innerHTML = `
+        <a href="/api/backtests/${id}/report?format=csv">Download CSV</a>
+        · <a href="/api/backtests/${id}/report?format=xlsx">Download Excel</a>
+        · <a href="/api/backtests/${id}/report?format=json">Download JSON</a>`;
+    }
+
+    document.getElementById("strategy-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = document.getElementById("run-button");
+      button.disabled = true;
+      message.textContent = "Running. Option candles are downloaded only for the selected contract on each session.";
+      const form = new FormData(event.target);
+      const expiry = form.get("expiry_date");
+      const strategy = {
+        symbol: form.get("symbol"),
+        from_date: form.get("from_date"),
+        to_date: form.get("to_date"),
+        entry_time: form.get("entry_time"),
+        exit_time: form.get("exit_time"),
+        entry_signal: "scheduled_time",
+        option_type: form.get("option_type"),
+        strike_offset_steps: Number(form.get("strike_offset_steps")),
+        expiry_rule: form.get("expiry_rule"),
+        expiry_date: expiry || null,
+        target_percent: numberValue(form, "target_percent"),
+        stop_loss_percent: numberValue(form, "stop_loss_percent"),
+        max_trades_per_day: numberValue(form, "max_trades_per_day"),
+        max_daily_loss: numberValue(form, "max_daily_loss"),
+        max_open_positions: numberValue(form, "max_open_positions"),
+        quantity_lots: numberValue(form, "quantity_lots"),
+        starting_capital: numberValue(form, "starting_capital"),
+        costs: {
+          brokerage_per_order: numberValue(form, "brokerage_per_order"),
+          stt_sell_percent: numberValue(form, "stt_sell_percent"),
+          exchange_txn_percent: numberValue(form, "exchange_txn_percent"),
+          sebi_per_crore: numberValue(form, "sebi_per_crore"),
+          stamp_buy_percent: numberValue(form, "stamp_buy_percent"),
+          gst_percent: numberValue(form, "gst_percent"),
+          slippage_percent: numberValue(form, "slippage_percent"),
+        },
+      };
+      try {
+        const response = await fetch("/api/backtests/run", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({strategy}),
+        });
+        const body = await response.json();
+        if (!response.ok) {
+          const detail = body.detail;
+          message.textContent = typeof detail === "string" ? detail : JSON.stringify(detail);
+          return;
+        }
+        const report = await fetch(`/api/backtests/${body.backtest_id}/report`).then((r) => r.json());
+        message.textContent = body.message;
+        showReport(report, body.backtest_id);
+        loadStatus();
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    loadStatus();
+  </script>
+</body>
+</html>
